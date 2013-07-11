@@ -24,7 +24,7 @@ from werkzeug import url_quote
 from openid.store.filestore import FileOpenIDStore
 from openid.extensions import ax
 from openid.extensions.sreg import SRegRequest, SRegResponse
-from openid.consumer.consumer import Consumer, SUCCESS, CANCEL
+from openid.consumer.consumer import Consumer, SUCCESS, CANCEL, FAILURE
 from openid.consumer import discover
 
 # python-openid is a really stupid library in that regard, we have
@@ -451,8 +451,10 @@ class OpenID(object):
                 return self.after_login_func(OpenIDResponse(openid_response))
             elif openid_response.status == CANCEL:
                 self.signal_error(u'The request was cancelled')
-                return redirect(self.get_current_url())
-            self.signal_error(u'OpenID authentication error')
+            elif openid_response.status == FAILURE:
+                self.signal_error(u'The request failed: %s' % openid_response.message)
+            else:
+                self.signal_error(u'OpenID authentication error')
             return redirect(self.get_current_url())
         return decorated
 
